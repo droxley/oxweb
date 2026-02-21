@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kitten Jump Game</title>
+  <style>
+    body {
+      margin: 0;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      background: #87CEEB;
+      overflow: hidden;
+    }
+
+    canvas {
+      background: #dff6ff;
+      display: block;
+      margin: 0 auto;
+      border-bottom: 4px solid #4CAF50;
+    }
+
+    #ui {
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    #instructions {
+      margin-top: 8px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="800" height="300"></canvas>
+
+<div id="ui">
+  <div>Score: <span id="score">0</span></div>
+  <button onclick="resetGame()">Reset Game</button>
+  <div id="instructions">
+    ➡️ Hold Right Arrow to move forward | ␣ Press Space to jump over barrels
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let keys = {};
+let score = 0;
+let gameOver = false;
+
+const gravity = 0.6;
+
+const kitten = {
+  x: 100,
+  y: 200,
+  width: 40,
+  height: 40,
+  dy: 0,
+  jumping: false
+};
+
+let barrels = [];
+let worldOffset = 0;
+
+// Create random barrels
+function spawnBarrel(lastX = 600) {
+  const spacing = 200 + Math.random() * 250;
+  barrels.push({
+    x: lastX + spacing,
+    width: 30,
+    height: 40,
+    counted: false
+  });
+}
+
+for (let i = 0; i < 5; i++) {
+  spawnBarrel(i * 300);
+}
+
+document.addEventListener("keydown", e => {
+  keys[e.code] = true;
+});
+
+document.addEventListener("keyup", e => {
+  keys[e.code] = false;
+});
+
+function update() {
+  if (gameOver) return;
+
+  // Move world if right arrow held
+  if (keys["ArrowRight"]) {
+    worldOffset += 4;
+  }
+
+  // Jump
+  if (keys["Space"] && !kitten.jumping) {
+    kitten.dy = -12;
+    kitten.jumping = true;
+  }
+
+  // Apply gravity
+  kitten.dy += gravity;
+  kitten.y += kitten.dy;
+
+  if (kitten.y >= 200) {
+    kitten.y = 200;
+    kitten.dy = 0;
+    kitten.jumping = false;
+  }
+
+  barrels.forEach(barrel => {
+    const screenX = barrel.x - worldOffset;
+
+    // Collision detection
+    if (
+      screenX < kitten.x + kitten.width &&
+      screenX + barrel.width > kitten.x &&
+      kitten.y + kitten.height > 200
+    ) {
+      gameOver = true;
+    }
+
+    // Score counting
+    if (!barrel.counted && screenX + barrel.width < kitten.x) {
+      score++;
+      document.getElementById("score").textContent = score;
+      barrel.counted = true;
+    }
+  });
+
+  // Spawn new barrels
+  const lastBarrel = barrels[barrels.length - 1];
+  if (lastBarrel.x - worldOffset < canvas.width) {
+    spawnBarrel(lastBarrel.x);
+  }
+}
+
+function drawKitten() {
+  ctx.fillStyle = "#FFD1DC"; // body
+  ctx.fillRect(kitten.x, kitten.y, kitten.width, kitten.height);
+
+  // ears
+  ctx.fillRect(kitten.x + 5, kitten.y - 10, 10, 10);
+  ctx.fillRect(kitten.x + 25, kitten.y - 10, 10, 10);
+
+  // eyes
+  ctx.fillStyle = "#000";
+  ctx.fillRect(kitten.x + 10, kitten.y + 10, 5, 5);
+  ctx.fillRect(kitten.x + 25, kitten.y + 10, 5, 5);
+}
+
+function drawBarrels() {
+  ctx.fillStyle = "#8B4513";
+  barrels.forEach(barrel => {
+    const screenX = barrel.x - worldOffset;
+    ctx.fillRect(screenX, 200, barrel.width, barrel.height);
+  });
+}
+
+function drawGround() {
+  ctx.fillStyle = "#4CAF50";
+  ctx.fillRect(0, 240, canvas.width, 60);
+}
+
+function drawGameOver() {
+  if (gameOver) {
+    ctx.fillStyle = "red";
+    ctx.font = "30px Arial";
+    ctx.fillText("Game Over!", canvas.width / 2 - 80, 120);
+  }
+}
+
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  update();
+  drawGround();
+  drawBarrels();
+  drawKitten();
+  drawGameOver();
+
+  requestAnimationFrame(loop);
+}
+
+function resetGame() {
+  score = 0;
+  document.getElementById("score").textContent = score;
+  barrels = [];
+  worldOffset = 0;
+  gameOver = false;
+  kitten.y = 200;
+  kitten.dy = 0;
+  kitten.jumping = false;
+
+  for (let i = 0; i < 5; i++) {
+    spawnBarrel(i * 300);
+  }
+}
+
+loop();
+</script>
+
+</body>
+</html>
