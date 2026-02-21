@@ -1,25 +1,165 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Click Game</title>
+  <title>Tic-Tac-Toe</title>
   <style>
-    body { text-align: center; font-family: Arial; }
-    button { font-size: 24px; padding: 20px; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f4f4f4;
+    }
+
+    h1 {
+      margin-top: 20px;
+    }
+
+    .scoreboard {
+      margin: 10px;
+      font-size: 18px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
+      justify-content: center;
+      margin: 20px auto;
+    }
+
+    .cell {
+      background: white;
+      border: 2px solid #333;
+      font-size: 40px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cell:hover {
+      background: #eaeaea;
+    }
+
+    .status {
+      font-size: 18px;
+      margin: 10px;
+      min-height: 24px;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
-<h1>Click the Button!</h1>
-<p>Score: <span id="score">0</span></p>
-<button onclick="addPoint()">Click Me!</button>
+<h1>Tic-Tac-Toe</h1>
+
+<div class="scoreboard">
+  X Score: <span id="xScore">0</span> |
+  O Score: <span id="oScore">0</span>
+</div>
+
+<div class="status" id="status">Player X's turn</div>
+
+<div class="board" id="board"></div>
+
+<button onclick="resetBoard()">Reset Board</button>
+<button onclick="resetScore()">Reset Score</button>
 
 <script>
-  let score = 0;
+  const boardElement = document.getElementById("board");
+  const statusText = document.getElementById("status");
+  const xScoreDisplay = document.getElementById("xScore");
+  const oScoreDisplay = document.getElementById("oScore");
 
-  function addPoint() {
-    score++;
-    document.getElementById("score").textContent = score;
+  let board = ["", "", "", "", "", "", "", "", ""];
+  let currentPlayer = "X";
+  let gameActive = true;
+  let xScore = 0;
+  let oScore = 0;
+
+  const winPatterns = [
+    [0,1,2], [3,4,5], [6,7,8], // rows
+    [0,3,6], [1,4,7], [2,5,8], // columns
+    [0,4,8], [2,4,6]           // diagonals
+  ];
+
+  function createBoard() {
+    boardElement.innerHTML = "";
+    board.forEach((cell, index) => {
+      const cellDiv = document.createElement("div");
+      cellDiv.classList.add("cell");
+      cellDiv.dataset.index = index;
+      cellDiv.textContent = cell;
+      cellDiv.addEventListener("click", handleClick);
+      boardElement.appendChild(cellDiv);
+    });
   }
+
+  function handleClick(e) {
+    const index = e.target.dataset.index;
+
+    if (board[index] !== "" || !gameActive) return;
+
+    board[index] = currentPlayer;
+    e.target.textContent = currentPlayer;
+
+    if (checkWinner()) {
+      statusText.textContent = `Player ${currentPlayer} wins!`;
+      updateScore(currentPlayer);
+      gameActive = false;
+      return;
+    }
+
+    if (!board.includes("")) {
+      statusText.textContent = "It's a draw!";
+      gameActive = false;
+      return;
+    }
+
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    statusText.textContent = `Player ${currentPlayer}'s turn`;
+  }
+
+  function checkWinner() {
+    return winPatterns.some(pattern => {
+      return pattern.every(index => board[index] === currentPlayer);
+    });
+  }
+
+  function updateScore(player) {
+    if (player === "X") {
+      xScore++;
+      xScoreDisplay.textContent = xScore;
+    } else {
+      oScore++;
+      oScoreDisplay.textContent = oScore;
+    }
+  }
+
+  function resetBoard() {
+    board = ["", "", "", "", "", "", "", "", ""];
+    currentPlayer = "X";
+    gameActive = true;
+    statusText.textContent = "Player X's turn";
+    createBoard();
+  }
+
+  function resetScore() {
+    xScore = 0;
+    oScore = 0;
+    xScoreDisplay.textContent = 0;
+    oScoreDisplay.textContent = 0;
+    resetBoard();
+  }
+
+  createBoard();
 </script>
 
 </body>
