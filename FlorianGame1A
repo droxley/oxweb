@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mini Zelda-Inspired Game</title>
+<style>
+  body { margin:0; background:#111; color:white; font-family:Arial; text-align:center;}
+  canvas { background:#222; display:block; margin:10px auto; }
+</style>
+</head>
+<body>
+
+<h2>Mini Adventure Game</h2>
+<div id="ui"></div>
+<canvas id="game" width="800" height="500"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let players = [];
+let boss = {x:600, y:200, hp:200};
+let keys = {};
+let zPressTimes = [];
+
+document.addEventListener("keydown", e=>{
+  keys[e.key.toLowerCase()] = true;
+
+  if(e.key.toLowerCase() === "z"){
+    const now = Date.now();
+    zPressTimes.push(now);
+    zPressTimes = zPressTimes.filter(t => now - t < 500);
+
+    players.forEach(p=>{
+      if(p.name.toLowerCase() === "florian"){
+        if(zPressTimes.length >= 3){
+          p.golden = true;
+          setTimeout(()=>p.golden=false, 5000);
+        } else {
+          spawnRobots();
+        }
+      }
+    });
+  }
+});
+
+document.addEventListener("keyup", e=>{
+  keys[e.key.toLowerCase()] = false;
+});
+
+function startGame(){
+  let count = parseInt(prompt("How many players (1-4)?")) || 1;
+  count = Math.min(4, Math.max(1, count));
+
+  for(let i=0;i<count;i++){
+    let name = prompt("Player " + (i+1) + " name:");
+    let isFlorian = name && name.toLowerCase() === "florian";
+
+    players.push({
+      name: name,
+      x: isFlorian ? boss.x - 50 : 100 + i*40,
+      y: 200,
+      hp: isFlorian ? 999 : 100,
+      golden: false,
+      isFlorian
+    });
+  }
+
+  gameLoop();
+}
+
+function spawnRobots(){
+  for(let i=0;i<5;i++){
+    boss.hp -= 5;
+  }
+}
+
+function update(){
+  players.forEach(p=>{
+    if(keys["arrowup"]) p.y -= 2;
+    if(keys["arrowdown"]) p.y += 2;
+    if(keys["arrowleft"]) p.x -= 2;
+    if(keys["arrowright"]) p.x += 2;
+
+    // Attack
+    if(keys[" "]){
+      let dmg = p.isFlorian ? 999 : 5;
+      if(Math.hypot(p.x - boss.x, p.y - boss.y) < 50){
+        boss.hp -= dmg;
+      }
+    }
+  });
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Boss
+  ctx.fillStyle = "red";
+  ctx.fillRect(boss.x, boss.y, 50, 50);
+
+  // Players
+  players.forEach(p=>{
+    ctx.fillStyle = p.golden ? "gold" : (p.isFlorian ? "cyan" : "white");
+    ctx.fillRect(p.x, p.y, 20, 20);
+
+    ctx.fillStyle = "white";
+    ctx.fillText(p.name + " (" + p.hp + ")", p.x - 10, p.y - 5);
+  });
+
+  // UI
+  document.getElementById("ui").innerHTML =
+    "Boss HP: " + boss.hp + "<br>" +
+    "Controls: Arrow keys move, SPACE attack, Z special (Florian)";
+}
+
+function gameLoop(){
+  update();
+  draw();
+
+  if(boss.hp <= 0){
+    alert("Boss defeated!");
+    location.reload();
+    return;
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+startGame();
+</script>
+
+</body>
+</html>
